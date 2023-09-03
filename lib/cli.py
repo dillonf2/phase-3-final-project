@@ -6,7 +6,7 @@ def calculate_accuracy(guess, number_to_guess, max_range):
     return (1 - abs(guess - number_to_guess) / (max_range-1)) * 100
 
 def display_high_scores(high_scores):
-    print("High Scores:")
+    print("\nHigh Scores:")
     sorted_high_scores = sorted(high_scores, key=lambda hs: (hs.guess_accuracy, hs.max_range), reverse=True)
     for rank, high_score in enumerate(sorted_high_scores, start=1):
         print(f"{rank}. Participant: {high_score.participant}")
@@ -17,92 +17,117 @@ def display_high_scores(high_scores):
         print()
 
 if __name__ == '__main__':
-    session= Session()
-    
-    input_value = input("Press Enter to Start a New Game... To view the Top 10 Guess Leaderboard, Enter Any Text and Then Press Enter.")
+    session = Session()
+    previous_winners = []
 
-    if input_value:
-        high_scores = session.query(HighScore).order_by(HighScore.guess_accuracy.desc()).limit(10).all()
-        if high_scores:
-            display_high_scores(high_scores)
-        else:
-            print("No games have been played yet.")
-    else: 
-        input("Welcome to Pick a Number! [Press Enter to Continue]")
-        input("Try to guess a random number in the specified range. [Press Enter to Continue]")
-        input("If you don't specify a range, the default range is 1-10. [Press Enter to Continue]")
+    while True:
+        print("\nMain Menu:")
+        print("1. Start a New Game")
+        print("2. View Top 10 Guess Leaderboard")
+        print("3. View Previous Winners of the Current Session")
+        print("4. Quit")
 
-        entries= []
-        custom_range = input("Enter the maximum range for the random number (press Enter for default 10): ")
-        max_range= int(custom_range) if custom_range else 10
-        number_to_guess= random.randint(1, max_range)
+        choice = input("Enter your choice: ")
 
-        input(f"Time to Guess a Number Between 1-{max_range}! [Press Enter to Continue]")
+        if choice == "1":
+            print("\nStarting a New Game...")
 
-        while True:
-            participant = input("Participant Name (or press Enter to finish): ")
-            if not participant:
-                if not entries:
-                    print("Cannot start game without participants.")
-                else:
-                    break
-    
+            input("Welcome to Pick a Number! [Press Enter to Continue]")
+            input("Try to guess a random number in the specified range. [Press Enter to Continue]")
+            input("If you don't specify a range, the default range is 1-10. [Press Enter to Continue]")
+
+            entries = []
+            custom_range = input("Enter the maximum range for the random number (press Enter for default 10): ")
+            max_range = int(custom_range) if custom_range else 10
+            number_to_guess = random.randint(1, max_range)
+
+            input(f"Time to Guess a Number Between 1-{max_range}! [Press Enter to Continue]")
+
             while True:
-                guess_input = input(f"{participant}, guess a number between 1-{max_range}: ")
-        
-                try:
-                    guess = int(guess_input)
-                    if 1 <= guess <= max_range:
-                        break
+                participant = input("Participant Name (or press Enter to finish): ")
+                if not participant:
+                    if not entries:
+                        print("Cannot start the game without participants.")
                     else:
-                        print(f"Guess must be between 1 and {max_range}.")
-                except ValueError:
-                    print("Invalid input. Please enter a valid integer.")
-    
-            entries.append((participant, guess))
+                        break
 
-        entry_text = "\n".join([f"{participant}: {guess}" for participant, guess in entries])
-        input(f'Good Luck Everyone! Here are the participants and their guesses:\n{entry_text}\n[Press Enter to Continue]')
-        input(f'And the random number was.... {number_to_guess}!!')
+                while True:
+                    guess_input = input(f"{participant}, guess a number between 1-{max_range}: ")
 
-        winner, winning_guess = max(entries, key=lambda entry: calculate_accuracy(entry[1], number_to_guess, max_range))
-        winning_accuracy = calculate_accuracy(winning_guess, number_to_guess, max_range)
+                    try:
+                        guess = int(guess_input)
+                        if 1 <= guess <= max_range:
+                            break
+                        else:
+                            print(f"Guess must be between 1 and {max_range}.")
+                    except ValueError:
+                        print("Invalid input. Please enter a valid integer.")
 
-        winners = [entry for entry in entries if calculate_accuracy(entry[1], number_to_guess, max_range) == calculate_accuracy(winning_guess, number_to_guess, max_range)]
+                entries.append((participant, guess))
 
-        if len(winners) == 1:
-            winner, winning_guess = winners[0]
+            entry_text = "\n".join([f"{participant}: {guess}" for participant, guess in entries])
+            input(f'Good Luck Everyone! Here are the participants and their guesses:\n{entry_text}\n[Press Enter to Continue]')
+            input(f'And the random number was.... {number_to_guess}!!')
+
+            winner, winning_guess = max(entries, key=lambda entry: calculate_accuracy(entry[1], number_to_guess, max_range))
             winning_accuracy = calculate_accuracy(winning_guess, number_to_guess, max_range)
-            input(f'So the winner is...{winner}, with a guess accuracy of {winning_accuracy:.2f}%! Congratulations {winner}!')
-        else:
-            random_winner = random.choice(winners)
-            input(f'There is a tie! A random winner will be selected from the tied participants.')
-            input(f'And the random tiebreaker winner is.... {random_winner[0]}!! Congratulations {random_winner[0]}!')
 
-        game = Game(
-            max_range=max_range,
-            number_to_guess=number_to_guess,
-            winner=winner,
-            winning_percentage=winning_accuracy
-        )
+            winners = [entry for entry in entries if calculate_accuracy(entry[1], number_to_guess, max_range) == calculate_accuracy(winning_guess, number_to_guess, max_range)]
 
-        session.add(game)
+            if len(winners) == 1:
+                winner, winning_guess = winners[0]
+                winning_accuracy = calculate_accuracy(winning_guess, number_to_guess, max_range)
+                input(f'So the winner is...{winner}, with a guess accuracy of {winning_accuracy:.2f}%! Congratulations {winner}!')
+            else:
+                random_winner = random.choice(winners)
+                input(f'There is a tie! A random winner will be selected from the tied participants.')
+                input(f'And the random tiebreaker winner is.... {random_winner[0]}!! Congratulations {random_winner[0]}!')
 
-        for participant, guess in entries:
-            participant_instance = Participant(name=participant, guess=guess)
-            game.participants.append(participant_instance)
+            game = Game(
+                max_range=max_range,
+                number_to_guess=number_to_guess,
+                winner=winner,
+                winning_percentage=winning_accuracy
+            )
 
-        high_score = HighScore(
-            participant=winner,
-            max_range=max_range,
-            number_to_guess=number_to_guess,
-            guess=winning_guess,
-            guess_accuracy=winning_accuracy
-        )
-        
-        game.high_scores.append(high_score)
+            session.add(game)
 
-        session.add(high_score)
-        session.commit()
+            for participant, guess in entries:
+                participant_instance = Participant(name=participant, guess=guess)
+                game.participants.append(participant_instance)
 
-        print("Game Over! High scores have been recorded.")
+            high_score = HighScore(
+                participant=winner,
+                max_range=max_range,
+                number_to_guess=number_to_guess,
+                guess=winning_guess,
+                guess_accuracy=winning_accuracy
+            )
+
+            game.high_scores.append(high_score)
+
+            session.add(high_score)
+            session.commit()
+
+
+            previous_winners.append(winner)
+
+            print("Game Over! High scores have been recorded.")
+
+        elif choice == "2":
+            high_scores = session.query(HighScore).order_by(HighScore.guess_accuracy.desc()).limit(10).all()
+            if high_scores:
+                display_high_scores(high_scores)
+            else:
+                print("\nNo games have been played yet.")
+
+        elif choice == "3":
+            if previous_winners:
+                print("\nPrevious Winners:")
+                for i, previous_winner in enumerate(previous_winners, start=1):
+                    print(f"{i}. {previous_winner}")
+            else:
+                print("\nNo previous winners to display.")
+
+        elif choice == "4":
+            break
