@@ -22,10 +22,12 @@ if __name__ == '__main__':
 
     while True:
         print("\nMain Menu:")
+        print("")
         print("1. Start a New Game")
         print("2. View Top 10 Guess Leaderboard")
         print("3. View Previous Winners of the Current Session")
-        print("4. Quit")
+        print("4. Quit (Resets Previous Winners)")
+        print("")
 
         choice = input("Enter your choice: ")
 
